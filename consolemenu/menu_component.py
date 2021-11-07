@@ -322,11 +322,25 @@ class MenuItemsSection(MenuComponent):
         for index, item in enumerate(self.items):
             if item.text in self.items_with_top_border:
                 yield self.inner_horizontal_border()
-            yield self.row(content=item.show(index), align=self.items_align)
+            yield self.row(content=item.show(index, available_width=self.calculate_content_width()), align=self.items_align)
             if item.text in self.items_with_bottom_border:
                 yield self.inner_horizontal_border()
         for x in range(0, self.padding.bottom):
             yield self.row()
+    
+    def row(self, content='', align='left'):
+        """wrapper script around row that handles multiple-line menu items and returns a single string
+        """
+        if isinstance(content, list):
+            lines = []
+            for line in content:
+                # TODO: check compatability on super() calls
+                lines.append(super().row(line, align))
+            return '\n'.join(lines)
+        else:
+            # TODO: check compatability on super() calls
+            return super().row(content, align)
+
 
 
 class MenuFooter(MenuComponent):
