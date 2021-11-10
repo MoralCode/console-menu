@@ -166,7 +166,7 @@ class MenuComponent(object):
                                           rv=self.border_style.top_right_corner,
                                           hz=self.outer_horizontals())
 
-    def row(self, content='', align='left'):
+    def _generate_single_row(self, content='', align='left'):
         """
         A row of the menu, which comprises the left and right verticals plus the given content.
 
@@ -176,6 +176,28 @@ class MenuComponent(object):
         return u"{lm}{vert}{cont}{vert}".format(lm=' ' * self.margins.left,
                                                 vert=self.border_style.outer_vertical,
                                                 cont=self._format_content(content, align))
+
+    def row(self, content='', align='left', indent_len=0):
+        """wrapper script around row that handles breaking up arbitraty length content into wrapped lines while respecting user-included newline characters. returns a single string correctly formatted for the menu
+        """
+        if len(content) == 0:
+            return self._generate_single_row()
+        # split on user newlines
+        content = content.splitlines()
+        lines = []
+        indent = ' '*indent_len
+
+        for line in content:
+            if line != content[0]:
+                # apply indentation to any lines after the first that were split by a users newline
+                line = indent + line
+            # apply any wrapping and indentation if the line is still too long
+            wrapped = textwrap.wrap(line, width=self.calculate_content_width(), subsequent_indent=indent)
+            for wrapline in wrapped:
+                # Finally, this adds the borders and things to the string
+                # TODO: check compatability on super() calls
+                lines.append(self._generate_single_row(wrapline, align))
+        return '\n'.join(lines)
 
     @staticmethod
     def _alignment_char(align):
@@ -247,8 +269,7 @@ class MenuTextSection(MenuComponent):
         for x in range(0, self.padding.top):
             yield self.row()
         if self.text is not None and self.text != '':
-            for line in textwrap.wrap(self.text, width=self.calculate_content_width()):
-                yield self.row(content=line, align=self.text_align)
+            yield self.row(content=self.text, align=self.text_align)
         for x in range(0, self.padding.bottom):
             yield self.row()
         if self.show_bottom_border:
@@ -322,24 +343,15 @@ class MenuItemsSection(MenuComponent):
         for index, item in enumerate(self.items):
             if item.text in self.items_with_top_border:
                 yield self.inner_horizontal_border()
-            yield self.row(content=item.show(index, available_width=self.calculate_content_width()), align=self.items_align)
+            # the length of the separator plus the length of the longest index number
+            indent_size = len(item.index_item_separator) + len(str(len(self.items)))
+            yield self.row(content=item.show(index), align=self.items_align, indent_len=indent_size)
             if item.text in self.items_with_bottom_border:
                 yield self.inner_horizontal_border()
         for x in range(0, self.padding.bottom):
             yield self.row()
     
-    def row(self, content='', align='left'):
-        """wrapper script around row that handles multiple-line menu items and returns a single string
-        """
-        if isinstance(content, list):
-            lines = []
-            for line in content:
-                # TODO: check compatability on super() calls
-                lines.append(super().row(line, align))
-            return '\n'.join(lines)
-        else:
-            # TODO: check compatability on super() calls
-            return super().row(content, align)
+    
 
 
 
