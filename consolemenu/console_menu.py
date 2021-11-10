@@ -405,6 +405,7 @@ class MenuItem(object):
         self.text = text
         self.menu = menu
         self.should_exit = should_exit
+        self.index_item_separator = " - "
 
     def __str__(self):
         return "%s %s" % (self.menu.get_title(), self.get_text())
@@ -423,7 +424,7 @@ class MenuItem(object):
         :return: The representation of the item to be shown in a menu
         :rtype: str
         """
-        return "%2d - %s" % (index + 1, self.get_text())
+        return "%2d%s%s" % (index + 1, self.index_item_separator, self.get_text())
 
     def set_up(self):
         """
